@@ -64,7 +64,7 @@ switch(instruction){
    			console.log("Preview Link: " + "https://open.spotify.com/track/0hrBpAOgrt8RXigk83LLNE");
    			console.log("Album: " + "The Sign");
 		}else{
-		spotify.search({ type: 'track', query: secondaryParam, limit: '5' }, function(error, data) {
+		spotify.search({ type: 'track', query: secondaryParam, limit: '1' }, function(error, data) {
   		if (!error) {
   			//var response = JSON.parse(data);
    			//console.log(JSON.stringify(data,null,2));
