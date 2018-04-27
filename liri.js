@@ -6,6 +6,7 @@ var Spotify = require('node-spotify-api');
 var Twitter = require('twitter');
 var request = require('request');
 var fs = require("fs");
+var inquirer = require("inquirer");
 var spotify = new Spotify(keys.spotify);
 var client = new Twitter(keys.twitter);
 
@@ -14,17 +15,57 @@ const omdbUrl = "http://www.omdbapi.com/?";
 
 //need to get process.argv parameters into generic variables so that I can run the process from either command line or file
 
-var instruction = process.argv[2];
+var instruction = ""
 var secondaryParam = "";
 
+// [ADDED] If user inputs no instruction, (ie node liri) use user prompts via inquirer to build instruction. 
+// This way user doesn't have to memorize exact commands
+if(process.argv.length === 2){
+inquirer.prompt({
+	type: "list",
+	message: "Hi! How can I help you?",
+	choices: ["my-tweets","spotify-this-song","movie-this","do-what-it-says"],
+	name: "instructPrompt"
+}).then(function(instructResponse){
+	switch(instructResponse.instructPrompt){
+		//instructions that need no search string
+		case "my-tweets":
+		case "do-what-it-says":
+		executeInstruction(instructResponse.instructPrompt,"");
+		break;
+		//instructions that need search string
+		case "spotify-this-song":
+		case "movie-this":
+		instruction = instructResponse.instructPrompt;
+		inquirer.prompt({
+			type: "input",
+			message: "Sure!, What would you like me to search for?",
+			name: "searchPrompt"
+		}).then(function(searchResponse){
+			secondaryParam = searchResponse.searchPrompt;
+			secondaryParam = secondaryParam.trim();
+			secondaryParam = encodeSearchString(secondaryParam);
+			executeInstruction(instruction,secondaryParam);
+
+		});
+	}
+});
+}else{  
+//User has specified an instruction in command line call
+	instruction = process.argv[2];
+//Build query string from rest of command line arguments
 for(var i=3;i<process.argv.length;i++){
 	secondaryParam += " " + process.argv[i];
 }
 secondaryParam = secondaryParam.trim();
+secondaryParam = encodeSearchString(secondaryParam);
+executeInstruction(instruction,secondaryParam);
+}
 
-
-
-//console.log(keys);
+/**************************************************************************
+*	executeInstruction
+*		performs actions based on instruction
+**************************************************************************/
 function executeInstruction(instruction, secondaryParam){
 switch(instruction){
 	/****************************************** 
@@ -66,17 +107,17 @@ switch(instruction){
 		}else{
 		spotify.search({ type: 'track', query: secondaryParam, limit: '1' }, function(error, data) {
   		if (!error) {
-  			//var response = JSON.parse(data);
-   			//console.log(JSON.stringify(data,null,2));
-   			for(var i = 0;i<data.tracks.items.length;i++){
-   				//console.log("in loop");
+  			//If Empty Data Set
+  			if(data.tracks.items.length === 0){
+  				return console.error("Error: No tracks found");
+  			} // end if empty data set
+  			//console.log(data);
+   			for(var i = 0;i<data.tracks.items.length;i++){   			
    			console.log("");
    			console.log("Artist: " + data.tracks.items[i].artists[0].name);
    			console.log("Song: " + data.tracks.items[i].name);
    			console.log("Preview Link: " + data.tracks.items[i].external_urls.spotify);
    			console.log("Album: " + data.tracks.items[i].album.name);
-
-   			//console.log("Song: ") + data.
    			}
 
   		}else{
@@ -97,22 +138,32 @@ switch(instruction){
 			console.log("It's on Netflix!");
 		}
 		var requestURL = omdbUrl + "t=" + secondaryParam +"&y=&plot=short&apikey=" + keys.omdb.apikey;
-		//requestURL ="http://www.omdbapi.com/?t=" + secondaryParam + "&y=&plot=short&apikey=trilogy";
-		//console.log(requestURL)
 		request(requestURL, function(error,response,body){
-			if(!error){
+			if(!error && response.statusCode === 200){
+
+			// If Empty Data Set
+			if(JSON.parse(body).Response === "False"){
+				return console.error("Error: Movie not found");
+					} // end if empty data set
+
 				var data = JSON.parse(body);
 				//console.log(data);
 				console.log("");
 				console.log("Title: " + data.Title);
 				console.log("Year: "  + data.Year);
 				console.log("IMDB Rating: " + data.Ratings[0].Value);
+
+				// Some movie entries seem to not have an RT score, this prevents from breaking
+				if(data.Ratings.length > 1){
 				console.log("Rotten Tomatos Rating: " + data.Ratings[1].Value);
+				}else{
+				console.log("Rotten Tomatos Rating: N/A")
+				}
+
 				console.log("Country: " + data.Country);
 				console.log("Language: " + data.Language);
 				console.log("Plot: " + data.Plot);
-				console.log("Actors: " + data.Actors);
-				
+				console.log("Actors: " + data.Actors);				
 			}else{
 				return console.error('Error occurred: ' + error);
 			}
@@ -135,16 +186,24 @@ switch(instruction){
 					secondaryParam += " "+args[i];
 				}
 				secondaryParam = secondaryParam.trim();
+				secondaryParam = encodeSearchString(secondaryParam);
 				//console.log(args[0])
 				executeInstruction(args[0], secondaryParam);
 			}
 		})
 	break;
+	// No recognized instruction
 	default:
-	console.log("Error");
+	console.error("Error: Not a vaild instruction. Please use \"my-tweets\",\"spotify-this-song\",\"movie-this\", or \"do-what-it-says\". You can also just run \"node liri\" and use the menu");
+	}
 }
-}
+
+/****************************************************************************
+*		encodeSearchString
+*				replaces spaces with "+" for passing to api calls
+****************************************************************************/
+function encodeSearchString(searchString){
+	return searchString.replace(/ /g,"+");
+} // end encodeSearchString
 
 
-
-executeInstruction(instruction, secondaryParam);
