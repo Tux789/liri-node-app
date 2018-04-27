@@ -41,7 +41,9 @@ switch(instruction){
     			maxLength = tweets.length;
     		}
     		for(var i=0;i<maxLength;i++){
-    		console.log(tweets[i].created_at + "  " + tweets[i].text);
+    		console.log("");
+    		console.log(tweets[i].created_at);
+    		console.log(tweets[i].text);
     			}
   			}else{
   				return console.error('Error occurred: ' + error);
@@ -56,22 +58,26 @@ switch(instruction){
 	case "spotify-this-song":
 		var trackTitle = 'The Sign';
 		if(secondaryParam === ""){
+			console.log("");
 			console.log("Artist: " + "Ace of Base");
    			console.log("Song: " + "The Sign");
    			console.log("Preview Link: " + "https://open.spotify.com/track/0hrBpAOgrt8RXigk83LLNE");
    			console.log("Album: " + "The Sign");
 		}else{
-		spotify.search({ type: 'track', query: secondaryParam, limit: '1' }, function(error, data) {
+		spotify.search({ type: 'track', query: secondaryParam, limit: '5' }, function(error, data) {
   		if (!error) {
   			//var response = JSON.parse(data);
    			//console.log(JSON.stringify(data,null,2));
-   			//for(var i = 0; i<data.length;i++){
-   			console.log("Artist: " + data.tracks.items[0].artists[0].name);
-   			console.log("Song: " + data.tracks.items[0].name);
-   			console.log("Preview Link: " + data.tracks.items[0].external_urls.spotify);
-   			console.log("Album: " + data.tracks.items[0].album.name);
+   			for(var i = 0;i<data.tracks.items.length;i++){
+   				//console.log("in loop");
+   			console.log("");
+   			console.log("Artist: " + data.tracks.items[i].artists[0].name);
+   			console.log("Song: " + data.tracks.items[i].name);
+   			console.log("Preview Link: " + data.tracks.items[i].external_urls.spotify);
+   			console.log("Album: " + data.tracks.items[i].album.name);
+
    			//console.log("Song: ") + data.
-   		//}
+   			}
 
   		}else{
   			return console.error('Error occurred: ' + error);
@@ -97,6 +103,7 @@ switch(instruction){
 			if(!error){
 				var data = JSON.parse(body);
 				//console.log(data);
+				console.log("");
 				console.log("Title: " + data.Title);
 				console.log("Year: "  + data.Year);
 				console.log("IMDB Rating: " + data.Ratings[0].Value);
@@ -121,7 +128,7 @@ switch(instruction){
 			if(error){
 				return console.error('Error occurred: ' + error);
 			}else{
-				console.log(data);
+				//console.log(data);
 				var args = data.split(",");
 				secondaryParam = "";
 				for(var i=1;i<args.length;i++){
@@ -132,9 +139,6 @@ switch(instruction){
 				executeInstruction(args[0], secondaryParam);
 			}
 		})
-	break;
-
-	console.log(instruction);
 	break;
 	default:
 	console.log("Error");
