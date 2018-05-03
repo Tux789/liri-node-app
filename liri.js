@@ -15,7 +15,7 @@ const omdbUrl = "http://www.omdbapi.com/?";
 
 //need to get process.argv parameters into generic variables so that I can run the process from either command line or file
 
-var instruction = ""
+var instruction = "";
 var secondaryParam = "";
 
 // [ADDED] If user inputs no instruction, (ie node liri) use user prompts via inquirer to build instruction. 
@@ -67,6 +67,13 @@ executeInstruction(instruction,secondaryParam);
 *		performs actions based on instruction
 **************************************************************************/
 function executeInstruction(instruction, secondaryParam){
+	var current = Date.now();
+	var currentDate = new Date(current);
+	logResults(["-----------------------------------------------------"]);
+	logResults([currentDate]);
+	logResults([instruction]);
+	logResults([secondaryParam]);
+	logResults(["-----------------------------------------------------"]);
 switch(instruction){
 	/****************************************** 
 	*	my-tweets
@@ -82,12 +89,13 @@ switch(instruction){
     			maxLength = tweets.length;
     		}
     		for(var i=0;i<maxLength;i++){
-    		console.log("");
-    		console.log(tweets[i].created_at);
-    		console.log(tweets[i].text);
+    		// console.log("");
+    		// console.log(tweets[i].created_at);
+    		// console.log(tweets[i].text);
+    		logResults(["",tweets[i].created_at,tweets[i].text]);
     			}
   			}else{
-  				return console.error('Error occurred: ' + error);
+  				return logError('Error occurred: ' + error);
   			}
 		});
 	break;
@@ -99,29 +107,35 @@ switch(instruction){
 	case "spotify-this-song":
 		var trackTitle = 'The Sign';
 		if(secondaryParam === ""){
-			console.log("");
-			console.log("Artist: " + "Ace of Base");
-   			console.log("Song: " + "The Sign");
-   			console.log("Preview Link: " + "https://open.spotify.com/track/0hrBpAOgrt8RXigk83LLNE");
-   			console.log("Album: " + "The Sign");
+			// console.log("");
+			// console.log("Artist: " + "Ace of Base");
+   // 			console.log("Song: " + "The Sign");
+   // 			console.log("Preview Link: " + "https://open.spotify.com/track/0hrBpAOgrt8RXigk83LLNE");
+   // 			console.log("Album: " + "The Sign");
+   			logResults(["","Artist: " + "Ace of Base","Song: " + "The Sign","Preview Link: " 
+   				+ "https://open.spotify.com/track/0hrBpAOgrt8RXigk83LLNE","Album: " + "The Sign"]);
 		}else{
 		spotify.search({ type: 'track', query: secondaryParam, limit: '1' }, function(error, data) {
   		if (!error) {
   			//If Empty Data Set
   			if(data.tracks.items.length === 0){
-  				return console.error("Error: No tracks found");
+  				return logError("Error: No tracks found");
   			} // end if empty data set
   			//console.log(data);
    			for(var i = 0;i<data.tracks.items.length;i++){   			
-   			console.log("");
-   			console.log("Artist: " + data.tracks.items[i].artists[0].name);
-   			console.log("Song: " + data.tracks.items[i].name);
-   			console.log("Preview Link: " + data.tracks.items[i].external_urls.spotify);
-   			console.log("Album: " + data.tracks.items[i].album.name);
+   			// console.log("");
+   			// console.log("Artist: " + data.tracks.items[i].artists[0].name);
+   			// console.log("Song: " + data.tracks.items[i].name);
+   			// console.log("Preview Link: " + data.tracks.items[i].external_urls.spotify);
+   			// console.log("Album: " + data.tracks.items[i].album.name);
+   			logResults(["","Artist: " + data.tracks.items[i].artists[0].name,
+   				"Song: " + data.tracks.items[i].name,
+   				"Preview Link: " + data.tracks.items[i].external_urls.spotify,
+   				"Album: " + data.tracks.items[i].album.name]);
    			}
 
   		}else{
-  			return console.error('Error occurred: ' + error);
+  			return logError('Error occurred: ' + error);
   		}		 
 		});
 	}
@@ -134,8 +148,8 @@ switch(instruction){
 	case "movie-this":
 		if(secondaryParam === ""){
 			secondaryParam = "mr nobody";
-			console.log("If you haven't watched \"Mr. Nobody,\" then you should: http://www.imdb.com/title/tt0485947/");
-			console.log("It's on Netflix!");
+			logResults(["If you haven't watched \"Mr. Nobody,\" then you should: http://www.imdb.com/title/tt0485947/",
+				"It's on Netflix!"]);
 		}
 		var requestURL = omdbUrl + "t=" + secondaryParam +"&y=&plot=short&apikey=" + keys.omdb.apikey;
 		request(requestURL, function(error,response,body){
@@ -148,6 +162,7 @@ switch(instruction){
 
 				var data = JSON.parse(body);
 				//console.log(data);
+				/*
 				console.log("");
 				console.log("Title: " + data.Title);
 				console.log("Year: "  + data.Year);
@@ -163,9 +178,20 @@ switch(instruction){
 				console.log("Country: " + data.Country);
 				console.log("Language: " + data.Language);
 				console.log("Plot: " + data.Plot);
-				console.log("Actors: " + data.Actors);				
+				console.log("Actors: " + data.Actors);
+				*/
+				var rTRatingString;
+				if(data.Ratings.length > 1){
+				rTRatingString = "Rotten Tomatos Rating: " + data.Ratings[1].Value;
+				}else{
+				rTRatingString = "Rotten Tomatos Rating: N/A";
+				}
+
+				logResults(["","Title: "+ data.Title, "Year: " + data.Year,
+					"IMDB Rating: " + data.Ratings[0].Value, rTRatingString, "Country: " + data.Country,
+					"Language: " + data.Language, "Plot: " + data.Plot, "Actors: " + data.Actors]);				
 			}else{
-				return console.error('Error occurred: ' + error);
+				return logError('Error occurred: ' + error);
 			}
 		});
 
@@ -183,7 +209,7 @@ switch(instruction){
 				var args = data.split(",");
 				secondaryParam = "";
 				for(var i=1;i<args.length;i++){
-					secondaryParam += " "+args[i];
+					secondaryParam += ","+args[i];
 				}
 				secondaryParam = secondaryParam.trim();
 				secondaryParam = encodeSearchString(secondaryParam);
@@ -194,7 +220,7 @@ switch(instruction){
 	break;
 	// No recognized instruction
 	default:
-	console.error("Error: Not a vaild instruction. Please use \"my-tweets\",\"spotify-this-song\",\"movie-this\", or \"do-what-it-says\". You can also just run \"node liri\" and use the menu");
+	logError("Error: Not a vaild instruction. Please use \"my-tweets\",\"spotify-this-song\",\"movie-this\", or \"do-what-it-says\". You can also just run \"node liri\" and use the menu");
 	}
 }
 
@@ -206,4 +232,25 @@ function encodeSearchString(searchString){
 	return searchString.replace(/ /g,"+");
 } // end encodeSearchString
 
+function logResults(textArray){
+	var textStr = "";
+	for(var i = 0; i<textArray.length;i++){
+		textStr += textArray[i] + "\n";
+		
+	}
+	console.log(textStr);
+	fs.appendFile("log.txt",textStr,function(error){
+			if(error){
+				console.error(error);
+			}
+		});
+}
+function logError(errorText){
+	console.error(errorText);
+	fs.appendFile("log.txt",errorText+"\n",function(error){
+		if(error){
+			console.error(error);
+		}
+	});
+}
 
